@@ -1,0 +1,45 @@
+1. make vscode folder ve workspace
+mkdir -p .vscode
+
+2. make c_cpp_properties.json
+{
+  "configurations": [
+    {
+      "name": "ROS2-Jazzy",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/opt/ros/jazzy/include/**",
+        "/usr/include/**",
+        "/usr/include/c++/13/**",
+        "/usr/include/x86_64-linux-gnu/c++/13/**",
+        "${workspaceFolder}/install/**/include/**",
+        "${workspaceFolder}/build/**/include/**"
+      ],
+      "defines": [],
+      "compilerPath": "/usr/bin/g++",
+      "cStandard": "gnu17",
+      "cppStandard": "gnu++17",
+      "intelliSenseMode": "linux-gcc-x64",
+      "browse": {
+        "path": [
+          "${workspaceFolder}/**",
+          "/opt/ros/jazzy/include",
+          "/usr/include",
+          "${workspaceFolder}/install/**/include"
+        ],
+        "limitSymbolsToIncludedHeaders": true,
+        "databaseFilename": ""
+      },
+      "compileCommands": "${workspaceFolder}/compile_commands.json"
+    }
+  ],
+  "version": 4
+}
+
+3. build workspace with commands on
+colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+4. link files
+ln -sf build/compile_commands.json .
+
+

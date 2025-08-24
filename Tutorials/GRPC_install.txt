@@ -1,0 +1,25 @@
+git clone -b v1.28.1 https://github.com/grpc/grpc 
+cd grpc
+git submodule update --init --recursive
+
+#EDITS TO GRPC files:
+grpc/third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc
+	#include <limits>
+	
+grpc/third_party/abseil-cpp/absl/debugging/failure_signal_handler.cc
+	size_t stack_size = (std::max(SIGSTKSZ, 65536) + page_mask) & ~page_mask;
+	->
+	size_t stack_size = (std::max<size_t>(SIGSTKSZ, 65536) + page_mask) & ~page_mask;
+
+#INSTALLING GRPC
+mkdir -p cmake/build
+cd cmake/build
+cmake -DgRPC_INSTALL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DBUILD_SHARED_LIBS=ON ../..
+
+make
+make install
+ldconfig
+
+
+#PROTOBUF INSTALL
+cd /grpc/third_party/protobuf && sudo ./autogen.sh && sudo ./configure --enable-shared && sudo make -j$(nproc) && sudo make -j$(nproc) check && sudo make install && sudo make clean && sudo ldconfig
