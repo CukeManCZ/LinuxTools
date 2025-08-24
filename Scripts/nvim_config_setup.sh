@@ -1,5 +1,6 @@
 #!/bin/bash
 # Installation of custom config for NVIM 
+# New Update
 # adds 
 # - intellisense
 # - SaveSession, LoadSession
