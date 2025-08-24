@@ -64,3 +64,31 @@ EOF
 fi
 
 echo "CUSTOM TRAHERY INSTALL installed exiting ..."
+
+echo "Install bashrc commands? y/n"
+read check 
+if check=="y"; then
+  echo "Installing bashrc commands.."
+    
+  echo "Making backup in ${HOME}/.bashrc.bak"
+  sudo cp "${HOME}/.bashrc" "$HOME/.bashrc.bak"
+
+  if grep -q "CUSTOM TRAHERY COMMANDS" ${HOME}/.bashrc; then
+    echo "CUSTOM TRAHERY COMMANDS already installed."
+  else  
+    echo "Installation of CUSTOM TRAHERY COMMANDS"
+
+    sudo tee -a "${HOME}/.bashrc" > /dev/null << 'EOF'
+
+# CUSTOM TRAHERY COMMANDS --------------- 
+alias obs="$HOME/Applications/obsidian.AppImage --no-sandbox"
+alias runz="ros2 run rmw_zenoh_cpp rmw_zenohd"
+alias LoadSession="vim -S .session.vim"
+# CUSTOM TRAHERY COMMANDS ---------------
+
+EOF
+  echo "CUSTOM TRAHERY COMMANDS installed exiting ..."
+  fi
+else
+  echo "CUSTOM TRAHERY COMMANDS not installed, exiting ..."  
+fi
