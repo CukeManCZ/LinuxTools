@@ -10,7 +10,7 @@ set -e
 NVIM_C=${HOME}/.config/nvim/init.vim
 
 echo "Making backup in ${HOME}/.config/nvim/init.vim.bak"
-sudo cp "$NVIM_C" "$HOME/Tools/Scripts/init.vim.bak"
+sudo cp "$NVIM_C" "$HOME/.config/nvim/init.vim.bak"
 
 if grep -q "CUSTOM TRAHERY INSTALL" ${NVIM_C}; then
   echo "CUSTOM TRAHERY INSTALL already installed."
