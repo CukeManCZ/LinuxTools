@@ -2,106 +2,107 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import tempfile
 import time
- 
-options = webdriver.FirefoxOptions()
+
+# --- Brave + Selenium setup ---
+#temp_profile_dir = tempfile.mkdtemp()
+
+options = webdriver.ChromeOptions()
 options.add_argument("--start-maximized")
-driver = webdriver.Firefox(options=options)
- 
+#options.add_argument(f"--user-data-dir={temp_profile_dir}")
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.binary_location = "/snap/brave/537/opt/brave.com/brave/brave-browser"
+options.add_experimental_option("useAutomationExtension", False)
+
+driver = webdriver.Chrome(options=options)
+
+# --- URL to watch ---
 driver.get("https://9animetv.to/watch/naruto-677?ep=12353")
- 
+
+# --- Global state ---
 start_time = time.time()
 skip_intro_clicked_once = False
- 
-def try_click_skip_intro(iframes):
-    for iframe in iframes:
-        driver.switch_to.frame(iframe)
-        try:
-            skip_intro_btn = WebDriverWait(driver, 0.5).until(
-                EC.element_to_be_clickable((By.ID, "skip-intro"))
-            )
-            driver.execute_script("arguments[0].click();", skip_intro_btn)
-            print("Clicked Skip Intro button inside iframe")
+
+# --- Helper functions ---
+def find_and_click_skip(button_id, timeout=5):
+    """Recursively search all iframes and click the button if found."""
+    def search_frames(frames):
+        for frame in frames:
+            driver.switch_to.frame(frame)
+            try:
+                btn = WebDriverWait(driver, timeout).until(
+                    EC.element_to_be_clickable((By.ID, button_id))
+                )
+                driver.execute_script("arguments[0].scrollIntoView(true);", btn)
+                driver.execute_script("arguments[0].click();", btn)
+                driver.switch_to.default_content()
+                print(f"Clicked {button_id} button")
+                return True
+            except:
+                # Recursive search inside nested iframes
+                nested_frames = driver.find_elements(By.TAG_NAME, "iframe")
+                if nested_frames:
+                    if search_frames(nested_frames):
+                        return True
             driver.switch_to.default_content()
-            return True
-        except:
-            driver.switch_to.default_content()
-            continue
- 
-    # Outside iframe
+        return False
+
+    # Search top-level frames first
+    frames = driver.find_elements(By.TAG_NAME, "iframe")
+    if search_frames(frames):
+        return True
+
+    # Finally, try outside iframe
     try:
-        skip_intro_btn = WebDriverWait(driver, 0.5).until(
-            EC.element_to_be_clickable((By.ID, "skip-intro"))
+        btn = WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.ID, button_id))
         )
-        driver.execute_script("arguments[0].click();", skip_intro_btn)
-        print("Clicked Skip Intro button outside iframe")
+        driver.execute_script("arguments[0].scrollIntoView(true);", btn)
+        driver.execute_script("arguments[0].click();", btn)
+        print(f"Clicked {button_id} button outside iframe")
         return True
     except:
         return False
- 
-def try_click_skip_outro(iframes):
-    for iframe in iframes:
-        driver.switch_to.frame(iframe)
-        try:
-            skip_outro_btn = WebDriverWait(driver, 0.5).until(
-                EC.element_to_be_clickable((By.ID, "skip-outro"))
-            )
-            driver.execute_script("arguments[0].click();", skip_outro_btn)
-            print("Clicked Skip Outro button inside iframe")
-            driver.switch_to.default_content()
-            return True
-        except:
-            driver.switch_to.default_content()
-            continue
- 
-    # Outside iframe
+
+def click_next_episode(timeout=5):
     try:
-        skip_outro_btn = WebDriverWait(driver, 0.5).until(
-            EC.element_to_be_clickable((By.ID, "skip-outro"))
-        )
-        driver.execute_script("arguments[0].click();", skip_outro_btn)
-        print("Clicked Skip Outro button outside iframe")
-        return True
-    except:
-        return False
- 
-def try_click_next():
-    try:
-        next_btn = WebDriverWait(driver, 1).until(
+        next_btn = WebDriverWait(driver, timeout).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "a.btn.btn-sm.btn-next"))
         )
+        driver.execute_script("arguments[0].scrollIntoView(true);", next_btn)
         driver.execute_script("arguments[0].click();", next_btn)
-        print("Clicked Next button after Skip Outro")
+        print("Clicked Next button")
         return True
     except:
-        print("Next button not found after Skip Outro")
+        print("Next button not found")
         return False
- 
- 
+
+# --- Main loop ---
 try:
     while True:
         driver.switch_to.default_content()
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
- 
-        # Try skip intro first
-        if try_click_skip_intro(iframes):
+
+        # Skip intro first
+        if find_and_click_skip("skip-intro"):
             skip_intro_clicked_once = True
- 
+
         elapsed = time.time() - start_time
- 
-        # After skipping intro once and after 30 sec, try skip outro + next
+
+        # After skipping intro and 30 sec, try skip outro + next
         if skip_intro_clicked_once and elapsed > 30:
-            if try_click_skip_outro(iframes):
-                if try_click_next():
-                    time.sleep(2)  # short wait for next episode to load
+            if find_and_click_skip("skip-outro"):
+                if click_next_episode():
+                    time.sleep(2)  # wait for next episode to load
                     start_time = time.time()
                     skip_intro_clicked_once = False
                     continue
- 
-        time.sleep(0.2)  # smaller sleep for faster loop
- 
+
+        time.sleep(0.5)  # small sleep for smoother loop
+
 except KeyboardInterrupt:
     print("Stopping script...")
- 
+
 finally:
     driver.quit()
+
